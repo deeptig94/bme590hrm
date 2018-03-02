@@ -2,12 +2,13 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import argrelmax
 from pandas.plotting import autocorrelation_plot
 
 
 class ECGData:
 
-    def __init__(self, file_name):
+    def __init__(self, file_name=None, threshold_factor=0):
         self.dataset = 0
         self.np_ma_dataset = 0
         self.ma_dataset = 0
@@ -15,6 +16,9 @@ class ECGData:
         self.np_wavelet = 0
         self.wavelet = 0
         self.correlated_data = 0
+        self.threshold = 0
+        self.threshold_factor = threshold_factor
+        self.beat_voltage = 0
         self.file_name = file_name
         #self.convert_file_name = convert_file_name
         #self.voltage = voltage
@@ -29,7 +33,6 @@ class ECGData:
 
         self.dataset = pd.read_csv(file_name)
         self.dataset.columns = ['time', 'voltage']
-        #print(self.dataset)
         return self.dataset
 
     def plot_data(self):
@@ -39,8 +42,8 @@ class ECGData:
         :returns
         """
 
+        plt.plot(self.dataset, x='time', y='voltage')
         plt.title("Heart Rate Signal")
-        self.dataset.plot(x='time', y='voltage')
         plt.show()
 
     def moving_average(self):
@@ -55,8 +58,9 @@ class ECGData:
         self.ma_dataset = self.ma_dataset.drop(self.ma_dataset.index[:10])
         self.ma_dataset = self.ma_dataset.reset_index()
         del self.ma_dataset['index']
-        self.ma_dataset.plot(x='time', y='voltage')
-        plt.show()
+        self.ma_dataset = self.ma_dataset - self.ma_dataset['voltage'].mean()
+        #self.ma_dataset.plot(x='time', y='voltage')
+        #plt.show()
         #print(self.ma_dataset)
         return self.ma_dataset
 
@@ -80,7 +84,6 @@ class ECGData:
 
         self.wavelet = self.ma_dataset.drop(self.ma_dataset.index[:(self.max_voltage_index-30)])
         self.wavelet = self.wavelet.drop(self.ma_dataset.index[(self.max_voltage_index+30):])
-        #print(self.wavelet)
         #self.wavelet.plot(x='time', y='voltage')
         #plt.show()
         return self.wavelet
@@ -100,6 +103,8 @@ class ECGData:
         self.np_wavelet = self.wavelet.drop(['time'], axis=1)
         self.np_wavelet = self.np_wavelet.values
         self.np_wavelet = np.ravel(self.np_wavelet)
+        plt.plot(self.np_wavelet)
+        plt.show()
         return self.np_ma_dataset, self.np_wavelet
 
     def correlate_wavelet_dataset(self):
@@ -112,18 +117,35 @@ class ECGData:
 
         self.correlated_data = np.correlate(self.np_wavelet, self.np_ma_dataset)
         self.correlated_data = self.correlated_data - np.mean(self.correlated_data)
+        self.correlated_data[self.correlated_data < 0] = 0
         plt.plot(self.correlated_data)
         plt.show()
-        print(self.correlated_data)
         return self.correlated_data
 
+    def find_peaks(self, threshold_factor):
 
-x = ECGData('test_data/test_data1.csv')
-x.read_data('test_data/test_data1.csv')
+        """Function returns voltage at each beat
+        :param self.correlated_data: numpy 1D array containing correlated and positive data
+        :returns self.beat_voltage: array with voltages at beat
+        """
+        
+        self.threshold = (np.mean(self.correlated_data))*threshold_factor
+        relative_maxima = argrelmax(self.correlated_data, order=30)
+        relative_maxima = np.ravel(relative_maxima)
+        self.beat_voltage = self.correlated_data[relative_maxima]
+        self.beat_voltage = [item for item in self.beat_voltage if item >= self.threshold]
+        return self.beat_voltage
+
+
+
+
+x = ECGData()
+x.read_data('test_data/test_data11.csv')
 #x.plot_data()
 x.moving_average()
 x.find_max_voltage_index()
 x.get_wavelet()
 x.pandas_to_numpy()
 x.correlate_wavelet_dataset()
+x.find_peaks(7)
 #x.auto_correlate()
