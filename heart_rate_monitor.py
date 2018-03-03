@@ -34,7 +34,7 @@ class ECGData:
 
         """Function takes numpy array with raw ECG information and performs a moving average function over it
         with a window of 10
-        :returns self.ma_dataset: numpy array after moving average is performed
+        :returns self.ma_dataset: numpy array after the moving average is performed
         """
         self.ma_dataset = wiener(np.asarray(self.voltage_dataset))
         return self.ma_dataset
