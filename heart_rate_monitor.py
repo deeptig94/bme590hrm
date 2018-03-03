@@ -1,7 +1,11 @@
-import csv
+import json
 import pandas as pd
 import numpy as np
 from scipy.signal import argrelmax, wiener
+import logging
+
+logging.basicConfig(filename='logging.txt', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y &I:%M:%S %p',
+                    level=logging.DEBUG)
 
 
 class ECGData:
@@ -30,6 +34,7 @@ class ECGData:
         self.time_dataset = time_dataset
         self.dataset = dataset
         self.dur = 0
+        self.beat_count = 0
 
     def moving_average(self):
 
@@ -38,6 +43,8 @@ class ECGData:
         :returns self.ma_dataset: numpy array after the moving average is performed
         """
         self.ma_dataset = wiener(np.asarray(self.voltage_dataset))
+
+        logging.info('INFO: Obtained dataset')
         return self.ma_dataset
 
     def find_max_voltage_index(self):
@@ -57,6 +64,7 @@ class ECGData:
         roi = slice(int(self.max_voltage_index)-30, int(self.max_voltage_index)+30)
         self.wavelet = self.ma_dataset[roi]
         self.wavelet = np.ravel(self.wavelet)
+        logging.info('INFO: Obtained wavelet')
         return self.wavelet
 
     def correlate_wavelet_dataset(self):
@@ -106,6 +114,7 @@ class ECGData:
         self.beats = self.time_dataset[self.peaks_index]
         self.beats = np.ravel(self.beats)
         print('These are the times, in seconds, when the beats occurred:', self.beats)
+        logging.info('INFO: Obtained beat times')
         return self.beats
 
     def num_beats(self):
@@ -114,8 +123,10 @@ class ECGData:
         :returns len(self.beat_voltage): length of numpy array
         """
 
-        print('This many beats occurred:', len(self.beat_voltage))
-        return len(self.beat_voltage)
+        self.beat_count = len(self.beat_voltage)
+        print('This many beats occurred:', self.beat_count)
+        logging.info('INFO: Obtained number of beats')
+        return self.beat_count
 
     def duration(self):
 
@@ -125,6 +136,7 @@ class ECGData:
 
         self.dur = max(self.time_dataset)
         print('This is the time duration, in seconds, of the ECG:', self.dur)
+        logging.info('INFO: Obtained ECG duration')
         return self.dur
 
     def voltage_extremes(self):
@@ -134,6 +146,7 @@ class ECGData:
 
         self.max_min = [self.voltage_dataset.max(), self.voltage_dataset.min()]
         print('The maximum and minimum voltage values are:', self.max_min)
+        logging.info('INFO: Obtained voltage extrema')
         return self.max_min
 
     def mean_hr_bpm(self, user_input):
@@ -148,8 +161,25 @@ class ECGData:
             self.hr = len(self.beat_voltage)/(user_input*60)
 
         print('Average heart rate in beats/second is:', self.hr)
+        logging.info('INFO: Obtained heart rate')
         return self.hr
 
-    #def make_json(self, file_name, hr, max_min, ):
+    def make_json(self, file_name):
 
+        """Function returns json file containing all required ECG Data
+        :param file_name: name of file for data to be extracted from
+        """
 
+        file_contents = [{"Average Heart Rate": float(self.hr)},
+                         {"Voltage Extrema": self.max_min},
+                         {"ECG Duration": float(self.dur)},
+                         {"Number of Beats": float(self.beat_count)},
+                         {"Beat Times": np.asarray(self.beats).tolist()}
+                         ]
+
+        json_file_name = file_name.replace('.csv', '.json')
+        json_file = open(json_file_name, 'w')
+        json.dump(file_contents, json_file)
+        json_file.write('\n')
+
+        logging.info('INFO: Create .json file')

@@ -1,6 +1,5 @@
-import pytest
-import pandas as pd
-import numpy as np
+import json
+
 from heart_rate_monitor import ECGData
 
 a = ECGData('test_data/test_data1.csv')
@@ -49,6 +48,7 @@ def test_mean_hr_bpm():
     assert(abs(p - 1.22412241) < 0.001)
 
 
-
-
-
+def test_make_json():
+    a.make_json('test_data/test_data1.csv')
+    z = json.loads(open('test_data/test_data1.json').read())
+    assert(z[0] == {"Average Heart Rate": 1.2241224122412242})
