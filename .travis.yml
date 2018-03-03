@@ -8,3 +8,6 @@ install:
 script:
       - pytest -v
     #      - pytest -v --cov --pep8
+branches:
+      only:
+      master
