@@ -29,6 +29,7 @@ class ECGData:
         self.voltage_dataset = voltage_dataset
         self.time_dataset = time_dataset
         self.dataset = dataset
+        self.dur = 0
 
     def moving_average(self):
 
@@ -46,7 +47,6 @@ class ECGData:
         """
         self.max_voltage_index = argrelmax(np.asarray(self.dataset), order=len(self.dataset))
         self.max_voltage_index = self.max_voltage_index[0]
-        print(self.max_voltage_index)
         return self.max_voltage_index
 
     def get_wavelet(self):
@@ -69,7 +69,6 @@ class ECGData:
         self.correlated_data = np.correlate(self.wavelet, self.ma_dataset)
         self.correlated_data = self.correlated_data - np.mean(self.correlated_data)
         self.correlated_data[self.correlated_data < 0] = 0
-        print(self.correlated_data)
         return self.correlated_data
 
     def find_peaks(self, threshold_factor):
@@ -80,7 +79,6 @@ class ECGData:
 
         self.correlated_data = self.correlated_data
         self.threshold = (np.mean(self.correlated_data))*threshold_factor
-        print(self.threshold)
         relative_maxima = argrelmax(self.correlated_data, order=30)
         relative_maxima = np.ravel(relative_maxima)
         self.beat_voltage = self.correlated_data[relative_maxima]
@@ -107,7 +105,7 @@ class ECGData:
         self.peaks_index = self.peaks_index
         self.beats = self.time_dataset[self.peaks_index]
         self.beats = np.ravel(self.beats)
-        print('These are the times when the beats occurred:', self.beats)
+        print('These are the times, in seconds, when the beats occurred:', self.beats)
         return self.beats
 
     def num_beats(self):
@@ -125,8 +123,9 @@ class ECGData:
         :returns max(self.time_dataset.values): time duration of ECG
         """
 
-        print('This is the time duration of the ECG:', max(self.time_dataset))
-        return max(self.time_dataset)
+        self.dur = max(self.time_dataset)
+        print('This is the time duration, in seconds, of the ECG:', self.dur)
+        return self.dur
 
     def voltage_extremes(self):
 
@@ -151,4 +150,6 @@ class ECGData:
         print('Average heart rate in beats/second is:', self.hr)
         return self.hr
 
-    #def make_json(self):
+    #def make_json(self, file_name, hr, max_min, ):
+
+
