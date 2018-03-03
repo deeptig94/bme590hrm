@@ -1,0 +1,8 @@
+numpy
+scipy
+pandas
+ipython
+matplotlib
+pytest
+pytest-cov
+pytest-pep8
