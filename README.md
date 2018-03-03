@@ -1,4 +1,4 @@
-# bme590hrm
+# Heart Rate Monitor
 
 This project works on using software to extract relevant information from a set of ECG Data.
 
